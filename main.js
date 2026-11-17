@@ -1025,32 +1025,61 @@ void main() {
     now.forEach((n, k) => chip(n.x, n.y, n.rot, 1 + n.pop * 0.22, fills[uniques[k].col]));
   }
 
-  // Midwest Solar: past installations plotted over a row of panels. A regression
-  // line swings into the best fit, then a small sun rides it to read off a prediction.
+  // Midwest Solar: past installations plotted over a row of panels. Gradient boosting starts from
+  // the average and adds one small tree per round, so the fit is a staircase that steps closer to
+  // the points. A sun then rides it to one installation, and SHAP bars break that prediction down.
   const solarScene = (() => {
     const R = rng(907);
-    const n = 26, pts = [];
+    const n = 30, pts = [];
+    const sm = (a, b, x) => { const u = clamp((x - a) / (b - a)); return u * u * (3 - 2 * u); };
     for (let k = 0; k < n; k++) {
-      const x = 0.05 + 0.9 * ((k + R() * 0.8) / n);
-      pts.push({ x, y: clamp(0.1 + 0.68 * x + (R() - 0.5) * 0.3, 0.04, 0.96), o: R() });
+      const x = 0.04 + 0.92 * ((k + R() * 0.8) / n);
+      const truth = 0.14 + 0.62 * sm(0.2, 0.42, x) - 0.3 * sm(0.68, 0.86, x);
+      pts.push({ x, y: clamp(truth + (R() - 0.5) * 0.2, 0.04, 0.96), o: R() });
     }
-    const mx = pts.reduce((a, p) => a + p.x, 0) / n, my = pts.reduce((a, p) => a + p.y, 0) / n;
-    const m = pts.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0) / pts.reduce((a, p) => a + (p.x - mx) ** 2, 0);
-    return { pts, m, b: my - m * mx, my };
+    const base = pts.reduce((a, p) => a + p.y, 0) / n;
+    // Real stumps fitted to the residuals, so each step lands where the data asks for one.
+    const M = 30, lr = 0.35, trees = [], F = pts.map(() => base), xs = pts.map((p) => p.x).sort((a, b) => a - b);
+    for (let m = 0; m < M; m++) {
+      const r = pts.map((p, i) => p.y - F[i]);
+      let best = null;
+      for (let k = 1; k < n - 2; k++) {
+        const thr = (xs[k] + xs[k + 1]) / 2;
+        let sl = 0, nl = 0, sr = 0, nr = 0;
+        pts.forEach((p, i) => { if (p.x < thr) { sl += r[i]; nl++; } else { sr += r[i]; nr++; } });
+        const gain = (sl * sl) / nl + (sr * sr) / nr;
+        if (!best || gain > best.gain) best = { gain, thr, L: (lr * sl) / nl, R: (lr * sr) / nr };
+      }
+      trees.push(best);
+      pts.forEach((p, i) => { F[i] += p.x < best.thr ? best.L : best.R; });
+    }
+    const predict = (x, rounds) => {
+      const whole = Math.floor(rounds), part = rounds - whole;
+      let v = base;
+      for (let j = 0; j < whole && j < M; j++) v += x < trees[j].thr ? trees[j].L : trees[j].R;
+      if (whole < M && part > 0) v += part * (x < trees[whole].thr ? trees[whole].L : trees[whole].R);
+      return v;
+    };
+    // The installation to explain: the highest prediction in the middle of the range.
+    let pick = 0;
+    pts.forEach((p, i) => { if (p.x > 0.36 && p.x < 0.56 && F[i] > F[pick]) pick = i; });
+    const gap = F[pick] - base;
+    const shap = [["contractor", 1], ["jurisdiction", 0.55], ["system kW", -0.75], ["battery", 0.2]].map(([name, f]) => ({ name, d: f * gap }));
+    return { pts, base, M, trees, predict, pick, shap };
   })();
 
   function artSun(c, w, h, t, C) {
-    const T = 11, tt = t % T, s = Math.min(w, h);
-    const { pts, m, b, my } = solarScene;
+    const T = 14, tt = t % T, s = Math.min(w, h);
+    const { pts, base, M, trees, predict, pick, shap } = solarScene;
     const horizon = h * 0.8, x0 = w * 0.09, x1 = w * 0.93, yLo = horizon - s * 0.07, yHi = h * 0.1;
     const X = (u) => lerp(x0, x1, u), Y = (v) => lerp(yLo, yHi, v);
-    const out = 1 - seg(tt, 9.8, 11);
-    const fit = seg(tt, 2.7, 4.6);
-    const lineIn = seg(tt, 2.3, 2.8) * out;
-    const line = (u) => lerp(my, m * u + b, fit);
-    const p = clamp((tt - 5) / 4.2);
-    const predicting = tt > 5 && tt < 9.8;
-    const up = lerp(0.03, 0.97, ease(p));
+    const out = 1 - seg(tt, 12.8, 14);
+    const lineIn = seg(tt, 1.6, 2.1) * out;
+    // Rounds start slow so the first few steps read, then speed up.
+    const rounds = M * Math.pow(seg(tt, 2.1, 6.8), 1.7);
+    const fx = (x) => predict(x, rounds);
+    const ride = seg(tt, 7, 8.2), dim = seg(tt, 8, 8.5);
+    const px = pts[pick].x, up = lerp(0.02, px, ease(ride));
 
     const cx = w * 0.17, cy = h * 0.2, R0 = s * 0.085, rays = 14, bw = s * 0.02;
     for (let i = 0; i < rays; i++) {
@@ -1073,7 +1102,7 @@ void main() {
       c.beginPath();
       c.moveTo(x + skew, y); c.lineTo(x + pw * 0.86 + skew, y); c.lineTo(x + pw * 0.86, y + ph); c.lineTo(x, y + ph); c.closePath();
       c.strokeStyle = C.paper; c.lineWidth = s * 0.006; c.stroke();
-      const lit = predicting ? clamp(up * panels - k) * out : 0;
+      const lit = clamp((rounds / M) * panels - k) * out;
       if (lit > 0) {
         c.save(); c.clip();
         c.fillStyle = C.paper;
@@ -1082,34 +1111,98 @@ void main() {
       }
     }
 
-    c.lineCap = "round";
+    c.lineCap = "round"; c.lineJoin = "round";
     if (lineIn > 0.01) {
-      c.globalAlpha = lineIn * (1 - 0.7 * fit);
+      // residuals: what the next tree is fitted to
+      c.globalAlpha = lineIn * 0.55 * (1 - dim);
       c.strokeStyle = C.ink; c.lineWidth = s * 0.005;
-      pts.forEach((q) => { c.beginPath(); c.moveTo(X(q.x), Y(q.y)); c.lineTo(X(q.x), Y(line(q.x))); c.stroke(); });
-      c.globalAlpha = lineIn;
-      c.strokeStyle = C.ink; c.lineWidth = s * 0.034;
-      c.beginPath(); c.moveTo(X(0), Y(line(0))); c.lineTo(X(1), Y(line(1))); c.stroke();
-      c.strokeStyle = C.paper; c.lineWidth = s * 0.014;
-      c.beginPath(); c.moveTo(X(0), Y(line(0))); c.lineTo(X(1), Y(line(1))); c.stroke();
+      pts.forEach((q) => { c.beginPath(); c.moveTo(X(q.x), Y(q.y)); c.lineTo(X(q.x), Y(fx(q.x))); c.stroke(); });
+      // the split the newest tree is making
+      const j = Math.ceil(rounds) - 1, part = rounds - Math.floor(rounds);
+      if (j >= 0 && j < 10 && part > 0) {
+        c.globalAlpha = lineIn * Math.sin(part * Math.PI) * 0.8;
+        c.setLineDash([s * 0.018, s * 0.02]);
+        c.lineWidth = s * 0.008;
+        c.beginPath(); c.moveTo(X(trees[j].thr), yHi); c.lineTo(X(trees[j].thr), yLo); c.stroke();
+        c.setLineDash([]);
+      }
+      // the staircase: flat between the splits made so far
+      const cuts = trees.slice(0, Math.ceil(rounds)).map((tr) => tr.thr).sort((a, b) => a - b);
+      const edges = [0, ...cuts, 1];
+      c.beginPath();
+      for (let i = 0; i < edges.length - 1; i++) {
+        const v = fx((edges[i] + edges[i + 1]) / 2);
+        if (i === 0) c.moveTo(X(0), Y(v)); else c.lineTo(X(edges[i]), Y(v));
+        c.lineTo(X(edges[i + 1]), Y(v));
+      }
+      c.globalAlpha = lineIn * (1 - 0.65 * dim);
+      c.strokeStyle = C.ink; c.lineWidth = s * 0.03; c.stroke();
+      c.strokeStyle = C.paper; c.lineWidth = s * 0.012; c.stroke();
     }
-    pts.forEach((q) => {
-      const pop = seg(tt, q.o * 2, q.o * 2 + 0.3);
+    pts.forEach((q, i) => {
+      const pop = seg(tt, q.o * 1.6, q.o * 1.6 + 0.3);
       if (pop <= 0) return;
-      c.globalAlpha = out;
+      c.globalAlpha = out * (i === pick ? 1 : 1 - 0.8 * dim);
       c.beginPath(); c.arc(X(q.x), Y(q.y), s * 0.017 * (pop + 0.5 * Math.sin(pop * Math.PI)), 0, Math.PI * 2);
       c.fillStyle = C.ink; c.fill();
     });
-    if (predicting) {
-      const px = X(up), py = Y(line(up));
-      c.globalAlpha = out;
-      c.strokeStyle = C.ink; c.lineWidth = s * 0.008;
-      c.setLineDash([s * 0.02, s * 0.022]);
-      c.beginPath(); c.moveTo(px, py); c.lineTo(px, horizon); c.stroke();
+    // round counter
+    if (lineIn > 0.01) {
+      c.globalAlpha = lineIn * (1 - dim);
+      c.fillStyle = C.ink; c.textAlign = "right"; c.textBaseline = "top";
+      c.font = `800 ${Math.max(11, s * 0.05).toFixed(1)}px Anybody, sans-serif`;
+      c.fillText(`tree ${String(Math.ceil(rounds)).padStart(2, "0")}`, w * 0.96, h * 0.04);
+    }
+
+    // SHAP: from the average, each feature pushes this one prediction up or down.
+    const sx = X(Math.min(px + 0.08, 0.6)), sw = (X(0.98) - sx) / shap.length, bw2 = sw * 0.64;
+    const baseIn = seg(tt, 8.3, 8.7) * out;
+    if (baseIn > 0.01) {
+      c.globalAlpha = baseIn;
+      c.strokeStyle = C.ink; c.lineWidth = s * 0.007;
+      c.setLineDash([s * 0.016, s * 0.018]);
+      c.beginPath(); c.moveTo(X(px), Y(base)); c.lineTo(lerp(X(px), X(0.98), baseIn), Y(base)); c.stroke();
       c.setLineDash([]);
-      c.beginPath(); c.arc(px, py, s * 0.042, 0, Math.PI * 2);
+    }
+    let run = base;
+    shap.forEach((f, i) => {
+      const g = seg(tt, 8.7 + i * 0.5, 9.15 + i * 0.5) * out;
+      if (g <= 0) return;
+      const a = run, b = run + f.d * ease(g), cx2 = sx + (i + 0.5) * sw;
+      run += f.d;
+      const ya = Y(a), yb = Y(b), tip = Math.sign(yb - ya) * Math.min(Math.abs(yb - ya), bw2 * 0.45);
+      c.globalAlpha = g;
+      // a bar with an arrowhead in the direction it pushes
+      c.beginPath();
+      c.moveTo(cx2 - bw2 / 2, ya); c.lineTo(cx2 + bw2 / 2, ya);
+      c.lineTo(cx2 + bw2 / 2, yb - tip); c.lineTo(cx2, yb); c.lineTo(cx2 - bw2 / 2, yb - tip);
+      c.closePath();
+      c.fillStyle = f.d > 0 ? C.accent : C.paper; c.fill();
+      c.strokeStyle = C.ink; c.lineWidth = s * 0.01; c.stroke();
+      if (i < shap.length - 1 && g >= 1) {
+        c.lineWidth = s * 0.006;
+        c.beginPath(); c.moveTo(cx2 + bw2 / 2, yb); c.lineTo(cx2 + sw - bw2 / 2, yb); c.stroke();
+      }
+      c.save();
+      c.translate(cx2, yLo - s * 0.01); c.rotate(-Math.PI / 2);
+      c.fillStyle = C.ink; c.textAlign = "left"; c.textBaseline = "middle";
+      c.font = `700 ${Math.max(10, s * 0.04).toFixed(1)}px Anybody, sans-serif`;
+      c.fillText(f.name, 0, 0);
+      c.restore();
+    });
+    // the sun rides the finished staircase to the installation being explained
+    if (tt > 7 && out > 0.01) {
+      const sxp = X(up), syp = Y(fx(up)), done = seg(tt, 10.8, 11.2);
+      c.globalAlpha = out * seg(tt, 7, 7.3);
+      if (done > 0) {
+        c.strokeStyle = C.ink; c.lineWidth = s * 0.007;
+        c.setLineDash([s * 0.016, s * 0.018]);
+        c.beginPath(); c.moveTo(sxp, syp); c.lineTo(lerp(sxp, sx + shap.length * sw - sw / 2, done), syp); c.stroke();
+        c.setLineDash([]);
+      }
+      c.beginPath(); c.arc(sxp, syp, s * 0.042 * (1 + 0.25 * Math.sin(done * Math.PI)), 0, Math.PI * 2);
       c.fillStyle = C.accent; c.fill();
-      c.lineWidth = s * 0.012; c.stroke();
+      c.strokeStyle = C.ink; c.lineWidth = s * 0.012; c.stroke();
     }
     c.globalAlpha = 1;
   }
