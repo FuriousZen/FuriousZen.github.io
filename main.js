@@ -1558,12 +1558,13 @@ void main() {
     const parts = titleParts(title), text = parts.join("").trim();
     title.setAttribute("aria-label", text);
     let at = 0;
-    const chunk = (part) => `<span class="kw" aria-hidden="true">${[...part].map((ch) => {
+    const chunk = (part, glue) => `<span class="kw"${glue ? " data-glue" : ""} aria-hidden="true">${[...part].map((ch) => {
       const i = at++;
       return `<span class="kc" style="--i:${i};--tw:${((hash(i, 4, 2) - 0.5) * 70).toFixed(0)}deg">${esc(ch)}</span>`;
     }).join("")}</span>`;
     // A camel-cased name may break at its capital (theCoder / School) as a spaced name breaks at its space.
-    title.innerHTML = parts.map((part) => part.trim().split(/\s+/).map(chunk).join(" ")).join("<wbr>");
+    // The first word after a <wbr> is glued to the word before it, so the two never get a space between them.
+    title.innerHTML = parts.map((part, pi) => part.trim().split(/\s+/).map((w, wi) => chunk(w, pi > 0 && wi === 0)).join(" ")).join("<wbr>");
     title.dataset.flat = title.innerHTML;
     el.style.setProperty("--p", "0");
     return { el, paintEl, stamp: $(".stop-stamp", el), p: 0, shown: -1, done: false };
@@ -1602,7 +1603,7 @@ void main() {
         if (!lines.length || Math.abs(lines[lines.length - 1].top - top) > 2) lines.push({ top, words: [] });
         lines[lines.length - 1].words.push(w);
       });
-      h.innerHTML = lines.map((l) => `<span class="kline">${l.words.map((w) => w.outerHTML).join(" ")}</span>`).join("");
+      h.innerHTML = lines.map((l) => `<span class="kline">${l.words.map((w, i) => (i && !w.hasAttribute("data-glue") ? " " : "") + w.outerHTML).join("")}</span>`).join("");
     });
     rows.forEach((s, i) => { if (was[i]) s.style.setProperty("--p", was[i]); else s.style.removeProperty("--p"); });
   }
