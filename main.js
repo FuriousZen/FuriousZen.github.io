@@ -1564,6 +1564,7 @@ void main() {
     }).join("")}</span>`;
     // A camel-cased name may break at its capital (theCoder / School) as a spaced name breaks at its space.
     title.innerHTML = parts.map((part) => part.trim().split(/\s+/).map(chunk).join(" ")).join("<wbr>");
+    title.dataset.flat = title.innerHTML;
     el.style.setProperty("--p", "0");
     return { el, paintEl, stamp: $(".stop-stamp", el), p: 0, shown: -1, done: false };
   });
@@ -1571,7 +1572,7 @@ void main() {
   function fitStopTitles() {
     const titles = $$(".stop-text h3");
     if (!titles.length) return;
-    titles.forEach((h) => { h.style.fontSize = ""; });
+    titles.forEach((h) => { h.style.fontSize = ""; if (h.dataset.flat) h.innerHTML = h.dataset.flat; });
     // Measure against the finished layout: the years start narrow and widen as each stop animates in.
     const rows = $$(".stop"), was = rows.map((s) => s.style.getPropertyValue("--p"));
     rows.forEach((s) => s.style.setProperty("--p", "1"));
@@ -1589,8 +1590,21 @@ void main() {
       });
     });
     probe.remove();
-    rows.forEach((s, i) => { if (was[i]) s.style.setProperty("--p", was[i]); else s.style.removeProperty("--p"); });
     if (ratio < 1) titles.forEach((h) => { h.style.fontSize = `${(base * ratio).toFixed(1)}px`; });
+    // Lock each title's line breaks to where they fall when finished. Otherwise a name that starts
+    // narrow sits on one line and jumps to two partway through the animation.
+    titles.forEach((h) => {
+      const words = $$(".kw", h);
+      if (!words.length) return;
+      const lines = [];
+      words.forEach((w) => {
+        const top = Math.round(w.offsetTop);
+        if (!lines.length || Math.abs(lines[lines.length - 1].top - top) > 2) lines.push({ top, words: [] });
+        lines[lines.length - 1].words.push(w);
+      });
+      h.innerHTML = lines.map((l) => `<span class="kline">${l.words.map((w) => w.outerHTML).join(" ")}</span>`).join("");
+    });
+    rows.forEach((s, i) => { if (was[i]) s.style.setProperty("--p", was[i]); else s.style.removeProperty("--p"); });
   }
 
   function updateStops() {
