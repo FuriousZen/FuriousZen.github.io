@@ -1,0 +1,4 @@
+.DS_Store
+.playwright-mcp/
+# Screenshots are no longer shown on the site, and they include a friend's name.
+media/

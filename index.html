@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>William Wo</title>
+  <meta name="description" content="William Wo is a computer science student at the University of Virginia who builds distributed systems and tooling for AI agents.">
+  <meta name="theme-color" content="#FF5A36">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23FF5A36'/%3E%3Ccircle cx='24' cy='40' r='16' fill='%23FFD60A'/%3E%3Crect x='30' y='8' width='26' height='26' fill='%235B8CFF'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&family=Schibsted+Grotesk:wght@400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas class="paint" aria-hidden="true"></canvas>
+
+  <aside class="rail" aria-label="Site navigation">
+    <canvas class="rail-paint" aria-hidden="true"></canvas>
+    <a class="rail-home" href="#top" aria-label="William Wo, back to the top">WW</a>
+    <nav class="rail-nav" aria-label="Sections">
+      <a href="#top"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg><span>Intro</span></a>
+      <a href="#about"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16a9 9 0 0 1 18 0z"/></svg><span>About</span></a>
+      <a href="#work"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16"/></svg><span>Work</span></a>
+      <a href="#more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2z"/></svg><span>More</span></a>
+      <a href="#contact"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z"/></svg><span>Contact</span></a>
+    </nav>
+    <button class="repaint" type="button"><i aria-hidden="true"></i><span>Repaint</span></button>
+  </aside>
+
+  <main>
+    <section class="hero" id="top" data-paint>
+      <h1 class="name" aria-label="William Wo">
+        <span class="name-line">William</span>
+        <span class="name-line">Wo</span>
+      </h1>
+    </section>
+
+    <section class="about" id="about" aria-labelledby="about-title">
+      <h2 class="section-title" id="about-title">About</h2>
+      <p class="statement">
+        I'm studying CS at UVA, and I like to build things.
+      </p>
+      <p class="about-prose">
+        Lately that means distributed systems and tools for AI agents. I'm on
+        the UVA MARS robotics team, and off the keyboard I climb and play soccer
+        and basketball whenever someone has a ball.
+      </p>
+
+      <ol class="timeline" aria-label="Experience">
+        <li class="stop" style="--c: var(--c2)">
+          <span class="stop-paint" aria-hidden="true"></span>
+          <span class="stop-year">2027</span>
+          <div class="stop-text">
+            <h3>CoStar Group</h3>
+            <p>Technology intern, Arlington, VA</p>
+          </div>
+          <span class="stop-stamp">Up next</span>
+        </li>
+        <li class="stop" style="--c: var(--c4)">
+          <span class="stop-paint" aria-hidden="true"></span>
+          <span class="stop-year">2026</span>
+          <div class="stop-text">
+            <h3>Lockheed Martin</h3>
+            <p>AI/ML engineering intern at Zeta Associates, Fairfax, VA</p>
+          </div>
+          <span class="stop-stamp">AI/ML</span>
+        </li>
+        <li class="stop" style="--c: var(--c3)">
+          <span class="stop-paint" aria-hidden="true"></span>
+          <span class="stop-year">2024</span>
+          <div class="stop-text">
+            <h3>theCoderSchool</h3>
+            <p>Computer science tutor for K-12 students, Ashburn, VA</p>
+          </div>
+          <span class="stop-stamp">Teaching</span>
+        </li>
+      </ol>
+    </section>
+
+    <section class="tools" aria-labelledby="tools-title">
+      <h2 class="visually-hidden" id="tools-title">Technical skills</h2>
+      <div class="marquees"></div>
+    </section>
+
+    <section class="work" id="work" aria-labelledby="work-title">
+      <div class="band">
+        <h2 id="work-title">My gallery</h2>
+        <p>Pick a project to open it.</p>
+      </div>
+      <div class="shelf"></div>
+    </section>
+
+    <section class="more" id="more" aria-labelledby="more-title">
+      <h2 class="section-title" id="more-title">In progress...</h2>
+      <div class="rows"></div>
+    </section>
+
+    <section class="contact" id="contact" data-paint aria-labelledby="contact-title">
+      <svg class="contact-tide" viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-5-5H1445V20C1350 65 1280-8 1190 24S1040 68 950 29 820 8 730 35 580 55 490 22 340 5 250 31 100 54-5 20Z"/>
+      </svg>
+      <div class="contact-prelude"><span aria-hidden="true">✳</span> Have something in mind?</div>
+
+      <div class="contact-stage">
+        <svg class="contact-swoop" viewBox="0 0 260 120" aria-hidden="true">
+          <path d="M8 96C54 9 130 9 151 47S118 116 98 80 177 7 247 31M222 10l26 21-29 14"/>
+        </svg>
+        <h2 class="contact-title" id="contact-title" aria-label="Say hello">
+          <span class="contact-say" aria-hidden="true">Say</span>
+          <span class="contact-word" aria-hidden="true"><span class="contact-letter" style="--tilt:-8deg">h</span><span class="contact-letter" style="--tilt:5deg">e</span><span class="contact-letter" style="--tilt:-7deg">l</span><span class="contact-letter" style="--tilt:7deg">l</span><span class="contact-letter" style="--tilt:-6deg">o</span></span>
+        </h2>
+
+        <a class="contact-burst" href="mailto:william.wo2006@gmail.com" aria-label="Write to me: william.wo2006@gmail.com">
+          <svg class="contact-burst-shape" viewBox="0 0 200 200" aria-hidden="true">
+            <path d="M100 4l14 24 23-17 4 28 28-4-8 27 28 7-19 21 26 10-26 14 19 23-28 4 4 28-27-8-7 28-21-19-10 26-14-26-23 19-4-28-28 4 8-27-28-7 19-21-26-10 26-14-19-23 28-4-4-28 27 8 7-28 21 19Z"/>
+          </svg>
+          <span class="contact-burst-type"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 31L31 9M9 9h22v22"/></svg>Write<br>to me</span>
+        </a>
+
+        <div class="contact-plane-dock" hidden>
+          <svg class="contact-plane-trail" viewBox="0 0 180 70" aria-hidden="true"><path d="M5 57c48 0 22-48 57-48s-2 53 40 44 40-29 65-29"/></svg>
+          <button class="contact-plane" type="button" aria-label="Launch the paper plane" hidden>
+            <svg viewBox="0 0 140 120" aria-hidden="true">
+              <path d="M8 43L130 8 86 110 61 72Z" fill="var(--paper)"/>
+              <path d="M61 72l69-64-44 102Z" fill="var(--c4)"/>
+              <path d="M61 72l-5 29 21-16M8 43L130 8 61 72 8 43ZM130 8L86 110 61 72" fill="none"/>
+              <path d="M56 101l5-29 16 13Z" fill="var(--c3)"/>
+              <path d="M28 43l26-7" fill="none" stroke-width="2"/>
+            </svg>
+            <span class="contact-plane-caption">Give it a nudge</span>
+          </button>
+        </div>
+        <div class="contact-droplets" aria-hidden="true"></div>
+      </div>
+
+      <div class="contact-bottom">
+        <div class="contact-note">
+          <p>If you want to build something together, or need a belay partner in Charlottesville, write to me.</p>
+          <svg viewBox="0 0 100 18" aria-hidden="true"><path d="M4 9q20-10 42 0T96 9M8 15q30-8 68-2"/></svg>
+        </div>
+        <div class="contact-actions">
+          <div class="contact-email">
+            <a href="mailto:william.wo2006@gmail.com"><span>william.wo2006@gmail.com</span><span class="contact-email-arrow" aria-hidden="true">↗</span></a>
+            <button class="contact-copy" type="button" aria-label="Copy email address" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="contact-links-row">
+            <nav class="contact-socials" aria-label="Find me elsewhere">
+              <a href="https://github.com/FuriousZen" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+              <a href="https://www.linkedin.com/in/william-wo-535298276" target="_blank" rel="noopener">LinkedIn <span aria-hidden="true">↗</span></a>
+            </nav>
+            <span class="contact-location">Charlottesville, VA</span>
+          </div>
+          <p class="contact-copy-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <footer class="contact-footer">
+        <span class="contact-signature">William Wo<span aria-hidden="true">✳</span></span>
+        <p>Thanks for stopping by.</p>
+        <a href="#top">Back to the surface <span aria-hidden="true">↑</span></a>
+      </footer>
+    </section>
+  </main>
+
+  <div class="cursor" aria-hidden="true"></div>
+
+  <noscript>
+    <p class="noscript">The project list on this page is built with JavaScript. My projects are all at <a href="https://github.com/FuriousZen">github.com/FuriousZen</a>, and you can reach me at <a href="mailto:william.wo2006@gmail.com">william.wo2006@gmail.com</a>.</p>
+  </noscript>
+
+  <script src="content.js"></script>
+  <script src="pool-physics.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
