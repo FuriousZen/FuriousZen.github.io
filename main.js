@@ -1538,6 +1538,13 @@ void main() {
     words.push(...$$(".w", statement));
   }
 
+  // A title may break at its spaces and at any <wbr> written into it (theCoder<wbr>School).
+  const titleParts = (h) => {
+    if (h.dataset.parts) return JSON.parse(h.dataset.parts);
+    const parts = h.innerHTML.split(/<wbr\s*\/?>/i).map((s) => { const d = document.createElement("div"); d.innerHTML = s; return d.textContent; });
+    h.dataset.parts = JSON.stringify(parts);
+    return parts;
+  };
   /* ---------- Timeline: every stop is driven by how far it has scrolled up the screen ---------- */
   const stops = reduce ? [] : $$(".stop").map((el) => {
     const year = $(".stop-year", el), title = $("h3", el), paintEl = $(".stop-paint", el);
@@ -1548,21 +1555,50 @@ void main() {
       const strip = Array.from({ length: n }, (_, j) => `<i>${(((+d - (n - 1 - j)) % 10) + 10) % 10}</i>`).join("");
       return `<span class="reel" aria-hidden="true"><span class="reel-strip" style="--k:${k};--n:${n}">${strip}</span></span>`;
     }).join("");
-    const text = title.textContent.trim();
+    const parts = titleParts(title), text = parts.join("").trim();
     title.setAttribute("aria-label", text);
     let at = 0;
-    title.innerHTML = text.split(" ").map((word) => `<span class="kw" aria-hidden="true">${[...word].map((ch) => {
+    const chunk = (part) => `<span class="kw" aria-hidden="true">${[...part].map((ch) => {
       const i = at++;
       return `<span class="kc" style="--i:${i};--tw:${((hash(i, 4, 2) - 0.5) * 70).toFixed(0)}deg">${esc(ch)}</span>`;
-    }).join("")}</span>`).join(" ");
+    }).join("")}</span>`;
+    // A camel-cased name may break at its capital (theCoder / School) as a spaced name breaks at its space.
+    title.innerHTML = parts.map((part) => part.trim().split(/\s+/).map(chunk).join(" ")).join("<wbr>");
     el.style.setProperty("--p", "0");
     return { el, paintEl, stamp: $(".stop-stamp", el), p: 0, shown: -1, done: false };
   });
+  // Timeline titles share one size: the largest at which every unbreakable piece of every title fits its column.
+  function fitStopTitles() {
+    const titles = $$(".stop-text h3");
+    if (!titles.length) return;
+    titles.forEach((h) => { h.style.fontSize = ""; });
+    // Measure against the finished layout: the years start narrow and widen as each stop animates in.
+    const rows = $$(".stop"), was = rows.map((s) => s.style.getPropertyValue("--p"));
+    rows.forEach((s) => s.style.setProperty("--p", "1"));
+    const cs = getComputedStyle(titles[0]), base = parseFloat(cs.fontSize);
+    const probe = document.createElement("span");
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-family:${cs.fontFamily};font-size:${base}px;letter-spacing:${cs.letterSpacing};font-variation-settings:"wdth" 110,"wght" 900`;
+    document.body.append(probe);
+    let ratio = 1;
+    titles.forEach((h) => {
+      const room = h.clientWidth;
+      titleParts(h).flatMap((p) => p.trim().split(/\s+/)).forEach((part) => {
+        probe.textContent = part;
+        const need = probe.getBoundingClientRect().width;
+        if (need > 0 && room > 0) ratio = Math.min(ratio, (room * 0.97) / need);
+      });
+    });
+    probe.remove();
+    rows.forEach((s, i) => { if (was[i]) s.style.setProperty("--p", was[i]); else s.style.removeProperty("--p"); });
+    if (ratio < 1) titles.forEach((h) => { h.style.fontSize = `${(base * ratio).toFixed(1)}px`; });
+  }
+
   function updateStops() {
     stops.forEach((s) => {
       const r = s.el.getBoundingClientRect();
       if (r.bottom < -200 || r.top > innerHeight + 200) { if (s.p === 0 || s.p === 1) return; }
-      const target = clamp((innerHeight * 0.94 - r.top) / (innerHeight * 0.5));
+      // Finished by the time the row's top is about two thirds of the way down the screen.
+      const target = clamp((innerHeight * 0.98 - r.top) / (innerHeight * 0.32));
       s.p = Math.abs(target - s.p) < 0.001 ? target : lerp(s.p, target, 0.1);
       if (Math.abs(s.p - s.shown) < 0.0008) return;
       s.shown = s.p;
@@ -1624,6 +1660,7 @@ void main() {
   /* ---------- Layout and the frame loop ---------- */
   function layout() {
     setShelf();
+    fitStopTitles();
     fitName();
     pool && pool.measure();
     fitAll();
