@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en">
+<!-- data-costar="on" lists the CoStar internship in the timeline; "off" shows the open TBD slot instead. -->
+<html lang="en" data-costar="off">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,12 +49,21 @@
       </p>
 
       <ol class="timeline" aria-label="Experience">
-        <li class="stop" style="--c: var(--c2)">
+        <li class="stop" style="--c: var(--c2)" data-costar-only="on">
           <span class="stop-paint" aria-hidden="true"></span>
           <span class="stop-year">2027</span>
           <div class="stop-text">
             <h3>CoStar Group</h3>
             <p>Technology intern, Arlington, VA</p>
+          </div>
+          <span class="stop-stamp">Up next</span>
+        </li>
+        <li class="stop" style="--c: var(--c2)" data-costar-only="off">
+          <span class="stop-paint" aria-hidden="true"></span>
+          <span class="stop-year">2027</span>
+          <div class="stop-text">
+            <h3>TBD</h3>
+            <p>Summer 2027 internship. Could be your team.</p>
           </div>
           <span class="stop-stamp">Up next</span>
         </li>

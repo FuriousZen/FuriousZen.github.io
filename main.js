@@ -8,6 +8,10 @@
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
   const LINKEDIN_URL = "https://www.linkedin.com/in/william-wo-535298276";
 
+  // The timeline keeps whichever 2027 entry matches <html data-costar>, and drops the other before anything measures it.
+  const costar = root.dataset.costar === "on" ? "on" : "off";
+  $$("[data-costar-only]").forEach((el) => { if (el.dataset.costarOnly !== costar) el.remove(); });
+
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const lerp = (a, b, t) => a + (b - a) * t;
   const ease = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };

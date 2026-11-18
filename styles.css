@@ -636,3 +636,7 @@ a.floatie:focus-visible { outline-offset: 6px; }
   .contact-burst-shape, .contact-drop { animation: none; }
   .contact-burst, .contact-burst-type, .contact-plane-caption, .contact-email, .contact-socials a, .contact-footer a > span { transition: none; }
 }
+
+/* Timeline variant switch, set on <html data-costar>. The script also removes the unused entry. */
+html:not([data-costar="on"]) [data-costar-only="on"],
+html[data-costar="on"] [data-costar-only="off"] { display: none; }
